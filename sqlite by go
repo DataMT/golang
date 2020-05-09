@@ -1,0 +1,46 @@
+package main
+import (
+        "database/sql"
+        "fmt"
+        _ "github.com/mattn/go-sqlite3"
+        "log"
+		"os"
+)
+
+type Users struct {
+
+	userId int64
+	gender int64
+	age int64
+	income int64
+}
+
+func main() {
+	os.Remove("./foo.db")
+	db, err := sql.Open("sqlite3", "C:/Users/TZ/ruleE.db")
+	if err != nil {
+			log.Fatal(err)
+	}
+	defer db.Close()
+	//sql := `create table qtest (userId integer, gender integer, age integer, income integer);`
+	//db.Exec(sql)
+	//sql = `insert into qtest(userId, gender, age, income) values(1,1,35,6000);`
+	//db.Exec(sql)
+	//sql = `insert into qtest(userId, gender, age, income) values(2,1,28,2000);`
+	//db.Exec(sql)
+	rows, err := db.Query("select userId,income from ruletest")
+	if err != nil {
+			log.Fatal(err)
+	}
+	defer rows.Close()
+	//var users []Users
+	
+	for rows.Next() {
+			var u Users
+			rows.Scan(&u.userId, &u.income)
+			fmt.Println("UserId is :",u.userId,"income is " ,u.income)
+			
+	}
+	
+}
+
