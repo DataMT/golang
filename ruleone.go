@@ -34,17 +34,7 @@ func (mf *MyFact) GetWhatToSay(sentence string) string {
 //func TestTutorial(t *testing.T) {
 func main() {	
 	//logrus.SetLevel(logrus.DebugLevel)
-	fmt.Println("yes")
-
-	db, err := sql.Open("sqlite3", "./ruleE.db")
-	if err != nil {
-			log.Fatal(err)
-	}
-	defer db.Close()
-
-
-
-
+	fmt.Println("start rule check...")
 
 
 	myFact := &MyFact{
@@ -72,9 +62,9 @@ func main() {
 	drls := `
 rule CheckValues "Check the default values" salience 10 {
     when 
-        MF.age == 35 && MF.income == 7000
+        MF.age == 35 && MF.income == 6000
     then
-        MF.WhatToSay = MF.GetWhatToSay("Hello Grule");
+        MF.WhatToSay = MF.GetWhatToSay("pass");
 		Retract("CheckValues");
 }
 `
@@ -90,7 +80,7 @@ rule CheckValues "Check the default values" salience 10 {
 		panic(err)
 	}
 
-	if myFact.WhatToSay != "Let say \"Hello Grule\"" {
+	if myFact.WhatToSay != "Let say \"pass\"" {
 		println("Not pass")
 	} else {
 		println(myFact.WhatToSay)
