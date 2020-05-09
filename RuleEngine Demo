@@ -1,0 +1,163 @@
+// connect to sqlite3 
+// read the data from sqlite3
+// use to RuleEngine to check these data 
+// return the result 
+
+
+package main
+import (
+        "database/sql"
+        "fmt"
+        _ "github.com/mattn/go-sqlite3"
+        "log"
+		//"os"
+		  "github.com/hyperjumptech/grule-rule-engine/ast"
+		  "github.com/hyperjumptech/grule-rule-engine/builder"
+	  	"github.com/hyperjumptech/grule-rule-engine/engine"
+	  	"github.com/hyperjumptech/grule-rule-engine/pkg"
+)
+
+type Users struct {
+
+	userId int64
+	gender int64
+	age int64
+	income int64
+	
+}
+
+type MyFact struct {
+
+	userId int64
+	gender int64
+	age int64
+	income int64
+
+	//IntAttribute     int64
+	//StringAttribute  string
+	//BooleanAttribute bool
+	//FloatAttribute   float64
+	//TimeAttribute    time.Time
+	WhatToSay        string
+}
+
+
+
+
+func main() {
+	//os.Remove("./foo.db")
+	db, err := sql.Open("sqlite3", "C:/Users/TZ/ruleE.db")
+	if err != nil {
+			log.Fatal(err)
+	}
+	defer db.Close()
+	//sql := `create table qtest (userId integer, gender integer, age integer, income integer);`
+	//db.Exec(sql)
+	//sql = `insert into qtest(userId, gender, age, income) values(1,1,35,6000);`
+	//db.Exec(sql)
+	//sql = `insert into qtest(userId, gender, age, income) values(2,1,28,2000);`
+	//db.Exec(sql)
+	rows, err := db.Query("select userId, income, age from ruletest")
+	if err != nil {
+			log.Fatal(err)
+	}
+	defer rows.Close()
+	//var users []Users
+	fmt.Println("Hi,welcome to Rule engine system:")
+
+	for rows.Next() {
+			var u Users
+			rows.Scan(&u.userId, &u.income,&u.age)
+			fmt.Println("UserId is :",u.userId,",age is",u.age,",income is " ,u.income)
+      
+      // start the rule engine checking
+			result := checkrule(u.userId,u.gender,u.age,u.income)
+			fmt.Println(result)
+			fmt.Println(".................")
+
+			
+	}	
+	
+}
+
+
+func (mf *MyFact) GetWhatToSay(sentence string) string {
+	return fmt.Sprintf("Let say \"%s\"", sentence)
+}
+
+func checkrule(userId int64,gender int64,age int64,income int64) string {	
+	//logrus.SetLevel(logrus.DebugLevel)
+	fmt.Println("start rule check...")
+
+
+	myFact := &MyFact{
+		userId: userId,
+		gender:  gender,
+		age: age,
+		income:  income,
+
+		//IntAttribute:     123,
+		//StringAttribute:  "Some string value",
+		//BooleanAttribute: true,
+		//FloatAttribute:   1.234,
+		//TimeAttribute:    time.Now(),
+	}
+	dataCtx := ast.NewDataContext()
+	err := dataCtx.Add("MF", myFact)
+	if err != nil {
+		panic(err)
+	}
+
+	workingMemory := ast.NewWorkingMemory()
+	knowledgeBase := ast.NewKnowledgeBase("Tutorial", "0.0.1")
+	ruleBuilder := builder.NewRuleBuilder(knowledgeBase, workingMemory)
+
+	drls := `
+rule CheckValues "Check the default values" salience 10 {
+    when 
+        MF.age > 34 && MF.income > 5999
+    then
+        MF.WhatToSay = MF.GetWhatToSay("pass");
+		Retract("CheckValues");
+}
+`
+	byteArr := pkg.NewBytesResource([]byte(drls))
+	err = ruleBuilder.BuildRuleFromResource(byteArr)
+	if err != nil {
+		panic(err)
+	}
+
+	engine := engine.NewGruleEngine()
+	err = engine.Execute(dataCtx, knowledgeBase, workingMemory)
+	if err != nil {
+		panic(err)
+	}
+
+	if myFact.WhatToSay != "Let say \"pass\"" {
+		return("Not pass")
+	} else {
+		return(myFact.WhatToSay)
+	}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
